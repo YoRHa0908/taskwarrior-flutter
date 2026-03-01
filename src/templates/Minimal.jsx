@@ -1,104 +1,121 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 
 export default function PerfectLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const cardRef = useRef(null);
+
+  /* ================= 3D PARALLAX ================= */
+
+  const handleMouseMove = (e) => {
+    const rect = cardRef.current.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width - 0.5;
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+
+    cardRef.current.style.transform = `
+      rotateY(${x * 18}deg)
+      rotateX(${y * -18}deg)
+      scale(1.02)
+    `;
+  };
+
+  const resetTilt = () => {
+    cardRef.current.style.transform = "rotateY(0deg) rotateX(0deg) scale(1)";
+  };
 
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-neutral-950 overflow-hidden">
 
-      {/* Soft Ambient Gradient */}
-      <div className="absolute inset-0">
-        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[700px] bg-indigo-500/20 rounded-full blur-[140px]" />
-        <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px]" />
-      </div>
-
-      {/* Card */}
+      {/* Animated Background Gradient */}
       <motion.div
-        initial={{ opacity: 0, y: 20, scale: 0.98 }}
+        animate={{ rotate: 360 }}
+        transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+        className="absolute w-[900px] h-[900px] bg-gradient-to-tr from-indigo-500/20 via-purple-500/20 to-pink-500/20 rounded-full blur-[180px]"
+      />
+
+      {/* Floating Card */}
+      <motion.div
+        ref={cardRef}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={resetTilt}
+        initial={{ opacity: 0, y: 80, scale: 0.9 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.6 }}
-        className="relative z-10 w-full max-w-md rounded-3xl bg-white/[0.04] backdrop-blur-xl border border-white/10 p-10 shadow-[0_20px_80px_rgba(0,0,0,0.6)]"
+        transition={{ duration: 0.8, type: "spring", stiffness: 80 }}
+        className="relative z-10 w-full max-w-md rounded-3xl bg-white/[0.05] backdrop-blur-2xl border border-white/10 p-10 shadow-[0_40px_120px_rgba(0,0,0,0.6)] transition-transform duration-200"
+        style={{ transformStyle: "preserve-3d" }}
       >
-        {/* Logo */}
-        <div className="w-10 h-10 rounded-xl bg-white/90 mb-8" />
-
-        <h2 className="text-3xl font-semibold text-white tracking-tight mb-2">
-          Welcome back
-        </h2>
-
-        <p className="text-neutral-400 mb-10">
-          Sign in to continue to your workspace
-        </p>
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <h2 className="text-3xl font-semibold text-white mb-2">
+            Welcome back
+          </h2>
+          <p className="text-neutral-400 mb-10">
+            Sign in to your workspace
+          </p>
+        </motion.div>
 
         {/* Email */}
-        <div className="mb-6">
-          <label className="block text-sm text-neutral-400 mb-2">
-            Email
-          </label>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="mb-6 relative"
+        >
           <input
             type="email"
             required
+            placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 
-                       focus:border-white/30 focus:bg-white/[0.06] 
-                       outline-none transition-all duration-200 text-white"
+            className="peer w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/10 
+                       focus:outline-none text-white"
           />
-        </div>
+          {/* Animated underline sweep */}
+          <span className="absolute left-0 bottom-0 h-[2px] w-0 bg-gradient-to-r from-indigo-400 to-purple-400 
+                           peer-focus:w-full transition-all duration-500" />
+        </motion.div>
 
         {/* Password */}
-        <div className="mb-8">
-          <label className="block text-sm text-neutral-400 mb-2">
-            Password
-          </label>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="mb-8 relative"
+        >
           <input
             type="password"
             required
+            placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 
-                       focus:border-white/30 focus:bg-white/[0.06] 
-                       outline-none transition-all duration-200 text-white"
+            className="peer w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/10 
+                       focus:outline-none text-white"
           />
-        </div>
+          <span className="absolute left-0 bottom-0 h-[2px] w-0 bg-gradient-to-r from-purple-400 to-pink-400 
+                           peer-focus:w-full transition-all duration-500" />
+        </motion.div>
 
-        {/* Primary Button */}
+        {/* Energy Button */}
         <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          type="submit"
-          className="w-full bg-white text-black py-3 rounded-xl font-medium 
-                     hover:bg-neutral-200 transition-all duration-200"
+          whileHover={{
+            scale: 1.05,
+            boxShadow: "0px 0px 40px rgba(139,92,246,0.6)",
+          }}
+          whileTap={{ scale: 0.95 }}
+          className="relative w-full py-3 rounded-xl font-medium overflow-hidden bg-gradient-to-r from-indigo-600 to-purple-600 text-white"
         >
-          Continue
+          <motion.span
+            animate={{ x: ["-100%", "100%"] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+          />
+          <span className="relative z-10">Continue</span>
         </motion.button>
 
-        {/* Divider */}
-        <div className="flex items-center my-8">
-          <div className="flex-1 h-px bg-white/10" />
-          <span className="px-4 text-sm text-neutral-500">or</span>
-          <div className="flex-1 h-px bg-white/10" />
-        </div>
-
-        {/* Social */}
-        <button className="w-full border border-white/10 py-3 rounded-xl mb-4 
-                           hover:bg-white/[0.04] transition-all duration-200 text-white">
-          Continue with Google
-        </button>
-
-        <button className="w-full border border-white/10 py-3 rounded-xl 
-                           hover:bg-white/[0.04] transition-all duration-200 text-white">
-          Continue with GitHub
-        </button>
-
-        <p className="text-sm text-neutral-500 mt-10 text-center">
-          Don’t have an account?{" "}
-          <span className="text-white hover:underline cursor-pointer">
-            Create one
-          </span>
-        </p>
       </motion.div>
     </div>
   );
