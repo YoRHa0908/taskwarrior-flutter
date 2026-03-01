@@ -3,7 +3,10 @@ import { motion, useReducedMotion } from "framer-motion";
 
 export default function Dark() {
   const canvasRef = useRef(null);
+  const cardRef = useRef(null);
+  const buttonRef = useRef(null);
   const shouldReduceMotion = useReducedMotion();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -16,8 +19,9 @@ export default function Dark() {
     const ctx = canvas.getContext("2d");
 
     let particles = [];
-    const PARTICLE_COUNT = 90;
     const mouse = { x: null, y: null };
+    const PARTICLE_COUNT = 110;
+    let hue = 260;
 
     const resize = () => {
       canvas.width = window.innerWidth;
@@ -32,66 +36,70 @@ export default function Dark() {
       mouse.y = e.clientY;
     });
 
-    class Particle {
-      constructor() {
-        this.x = Math.random() * canvas.width;
-        this.y = Math.random() * canvas.height;
-        this.vx = (Math.random() - 0.5) * 1.2;
-        this.vy = (Math.random() - 0.5) * 1.2;
-        this.radius = Math.random() * 2 + 1;
+    window.addEventListener("click", (e) => {
+      for (let i = 0; i < 20; i++) {
+        particles.push(new Particle(e.clientX, e.clientY, true));
       }
+    });
 
-      draw() {
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(139,92,246,0.8)";
-        ctx.shadowColor = "#8b5cf6";
-        ctx.shadowBlur = 10;
-        ctx.fill();
+    class Particle {
+      constructor(x, y, explode = false) {
+        this.x = x ?? Math.random() * canvas.width;
+        this.y = y ?? Math.random() * canvas.height;
+        this.radius = Math.random() * 2 + 1;
+        this.vx = explode
+          ? (Math.random() - 0.5) * 6
+          : (Math.random() - 0.5) * 1.2;
+        this.vy = explode
+          ? (Math.random() - 0.5) * 6
+          : (Math.random() - 0.5) * 1.2;
+        this.life = explode ? 80 : Infinity;
       }
 
       update() {
         this.x += this.vx;
         this.y += this.vy;
 
-        // Bounce edges
         if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
         if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
 
-        // Mouse interaction
+        // Mouse repel
         if (mouse.x && mouse.y) {
           const dx = this.x - mouse.x;
           const dy = this.y - mouse.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
-
           if (dist < 120) {
             this.x += dx * 0.02;
             this.y += dy * 0.02;
           }
         }
 
-        this.draw();
-      }
-    }
-
-    const connectParticles = () => {
-      for (let a = 0; a < particles.length; a++) {
-        for (let b = a; b < particles.length; b++) {
-          const dx = particles[a].x - particles[b].x;
-          const dy = particles[a].y - particles[b].y;
-          const dist = dx * dx + dy * dy;
-
-          if (dist < 14000) {
-            ctx.beginPath();
-            ctx.strokeStyle = "rgba(139,92,246,0.15)";
-            ctx.lineWidth = 1;
-            ctx.moveTo(particles[a].x, particles[a].y);
-            ctx.lineTo(particles[b].x, particles[b].y);
-            ctx.stroke();
+        // Button attraction
+        if (buttonRef.current) {
+          const rect = buttonRef.current.getBoundingClientRect();
+          const bx = rect.left + rect.width / 2;
+          const by = rect.top + rect.height / 2;
+          const dx = bx - this.x;
+          const dy = by - this.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 200) {
+            this.x += dx * 0.005;
+            this.y += dy * 0.005;
           }
         }
+
+        this.life--;
       }
-    };
+
+      draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `hsl(${hue}, 80%, 60%)`;
+        ctx.shadowColor = `hsl(${hue}, 80%, 60%)`;
+        ctx.shadowBlur = 15;
+        ctx.fill();
+      }
+    }
 
     const init = () => {
       particles = [];
@@ -100,10 +108,35 @@ export default function Dark() {
       }
     };
 
+    const connect = () => {
+      for (let a = 0; a < particles.length; a++) {
+        for (let b = a; b < particles.length; b++) {
+          const dx = particles[a].x - particles[b].x;
+          const dy = particles[a].y - particles[b].y;
+          const dist = dx * dx + dy * dy;
+          if (dist < 15000) {
+            ctx.beginPath();
+            ctx.strokeStyle = `hsla(${hue}, 80%, 60%, 0.1)`;
+            ctx.moveTo(particles[a].x, particles[a].y);
+            ctx.lineTo(particles[b].x, particles[b].y);
+            ctx.stroke();
+          }
+        }
+      }
+    };
+
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      particles.forEach((p) => p.update());
-      connectParticles();
+
+      hue += 0.5;
+      particles = particles.filter((p) => p.life > 0);
+
+      particles.forEach((p) => {
+        p.update();
+        p.draw();
+      });
+
+      connect();
       requestAnimationFrame(animate);
     };
 
@@ -115,35 +148,47 @@ export default function Dark() {
     };
   }, [shouldReduceMotion]);
 
+  /* ================= 3D PARALLAX ================= */
+
+  const handleMouseMove = (e) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width - 0.5;
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    cardRef.current.style.transform = `
+      rotateY(${x * 20}deg)
+      rotateX(${y * -20}deg)
+    `;
+  };
+
+  const resetTilt = () => {
+    if (cardRef.current) {
+      cardRef.current.style.transform = "rotateY(0deg) rotateX(0deg)";
+    }
+  };
+
   /* ================= UI ================= */
 
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-black overflow-hidden">
 
-      {/* Particle Canvas */}
       {!shouldReduceMotion && (
-        <canvas
-          ref={canvasRef}
-          className="absolute inset-0"
-        />
+        <canvas ref={canvasRef} className="absolute inset-0" />
       )}
 
-      {/* Login Card */}
       <motion.form
-        initial={{ opacity: 0, scale: 0.9, rotateX: -20 }}
-        animate={{ opacity: 1, scale: 1, rotateX: 0 }}
+        ref={cardRef}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={resetTilt}
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.8 }}
-        className="relative z-10 backdrop-blur-3xl bg-white/5 border border-white/20 text-white p-10 rounded-3xl shadow-[0_0_80px_rgba(139,92,246,0.4)] w-96"
+        className="relative z-10 backdrop-blur-3xl bg-white/5 border border-white/20 text-white p-10 rounded-3xl shadow-[0_0_120px_rgba(139,92,246,0.6)] w-96 transition-transform duration-200"
         style={{ transformStyle: "preserve-3d" }}
       >
-        <motion.h2
-          initial={{ opacity: 0, y: -30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="text-4xl font-bold mb-8 text-center bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent"
-        >
+        <h2 className="text-4xl font-bold mb-8 text-center bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
           Welcome Back
-        </motion.h2>
+        </h2>
 
         <div className="mb-6">
           <input
@@ -166,12 +211,10 @@ export default function Dark() {
         </div>
 
         <motion.button
-          whileHover={{
-            scale: 1.08,
-            boxShadow: "0px 0px 40px rgba(139,92,246,0.7)",
-          }}
+          ref={buttonRef}
+          whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.95 }}
-          className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 py-3 rounded-xl font-semibold tracking-wide"
+          className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 py-3 rounded-xl font-semibold tracking-wide shadow-lg"
         >
           Sign In
         </motion.button>
