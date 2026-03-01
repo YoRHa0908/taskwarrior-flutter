@@ -1,103 +1,111 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
 
 export default function PerfectLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-black overflow-hidden">
+    <div className="min-h-screen bg-white text-black flex">
 
-      {/* Animated Aurora Background */}
-      <div className="absolute inset-0">
-        <div className="absolute w-[800px] h-[800px] bg-purple-600/30 rounded-full blur-[160px] -top-40 -left-40 animate-pulse" />
-        <div className="absolute w-[700px] h-[700px] bg-indigo-500/30 rounded-full blur-[150px] bottom-0 right-0 animate-pulse" />
+      {/* LEFT PANEL */}
+      <div className="hidden lg:flex w-1/2 flex-col justify-between p-16 border-r-[6px] border-black">
+        <div>
+          <div className="w-14 h-14 bg-black mb-12" />
+          
+          <h1 className="text-6xl font-extrabold leading-[0.95] tracking-tight uppercase">
+            WORK. <br />
+            HARD. <br />
+            LOG IN.
+          </h1>
+
+          <p className="mt-8 text-lg max-w-md font-medium">
+            No gradients. No fluff.  
+            Just control, clarity, and execution.
+          </p>
+        </div>
+
+        <p className="text-sm font-bold">
+          © 2026 YOURCOMPANY
+        </p>
       </div>
 
-      {/* Glass Card */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9, y: 40 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.8 }}
-        className="relative z-10 w-full max-w-md p-[1px] rounded-3xl bg-gradient-to-br from-purple-500 via-indigo-500 to-pink-500"
-      >
-        <div className="bg-black/70 backdrop-blur-2xl rounded-3xl p-10 text-white">
+      {/* RIGHT PANEL */}
+      <div className="flex flex-1 items-center justify-center p-8">
+        <form className="w-full max-w-md">
 
-          <h2 className="text-4xl font-bold mb-2 bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent">
-            Enter the Portal
+          <h2 className="text-5xl font-black uppercase mb-4 tracking-tight">
+            SIGN IN
           </h2>
 
-          <p className="text-neutral-400 mb-10">
-            Access your digital universe
+          <p className="mb-12 text-lg font-medium">
+            Access your system.
           </p>
 
           {/* Email */}
-          <div className="mb-6">
+          <div className="mb-8">
+            <label className="block text-sm font-bold uppercase mb-3">
+              Email
+            </label>
             <input
               type="email"
               required
-              placeholder="Email address"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 focus:border-purple-400 focus:ring-2 focus:ring-purple-500/30 outline-none transition-all duration-300 placeholder:text-neutral-500"
+              className="w-full px-4 py-4 border-[4px] border-black focus:outline-none focus:bg-black focus:text-white transition-all duration-150"
             />
           </div>
 
           {/* Password */}
-          <div className="mb-8">
+          <div className="mb-12">
+            <label className="block text-sm font-bold uppercase mb-3">
+              Password
+            </label>
             <input
               type="password"
               required
-              placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/30 outline-none transition-all duration-300 placeholder:text-neutral-500"
+              className="w-full px-4 py-4 border-[4px] border-black focus:outline-none focus:bg-black focus:text-white transition-all duration-150"
             />
           </div>
 
-          {/* Primary Button */}
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.97 }}
-            className="relative w-full py-3 rounded-xl font-semibold overflow-hidden bg-gradient-to-r from-purple-600 to-indigo-600"
+          {/* BUTTON */}
+          <button
+            type="submit"
+            className="w-full bg-black text-white py-5 text-xl font-extrabold uppercase border-[4px] border-black 
+                       hover:bg-white hover:text-black 
+                       active:translate-x-2 active:translate-y-2 
+                       transition-all duration-150
+                       shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]"
           >
-            <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-[shimmer_2s_linear_infinite]" />
-            <span className="relative z-10">Launch Session</span>
-          </motion.button>
+            ENTER
+          </button>
 
           {/* Divider */}
-          <div className="flex items-center my-8">
-            <div className="flex-1 h-px bg-white/10" />
-            <span className="px-4 text-sm text-neutral-500">or connect</span>
-            <div className="flex-1 h-px bg-white/10" />
+          <div className="flex items-center my-12">
+            <div className="flex-1 h-[3px] bg-black" />
+            <span className="px-6 font-bold uppercase text-sm">or</span>
+            <div className="flex-1 h-[3px] bg-black" />
           </div>
 
-          {/* Social Buttons */}
-          <button className="w-full bg-white/5 border border-white/10 py-3 rounded-xl mb-4 hover:bg-white/10 transition">
-            Continue with Google
+          {/* Social */}
+          <button className="w-full border-[4px] border-black py-4 font-bold uppercase mb-6 hover:bg-black hover:text-white transition">
+            Google
           </button>
 
-          <button className="w-full bg-white/5 border border-white/10 py-3 rounded-xl hover:bg-white/10 transition">
-            Continue with GitHub
+          <button className="w-full border-[4px] border-black py-4 font-bold uppercase hover:bg-black hover:text-white transition">
+            GitHub
           </button>
 
-          <p className="text-sm text-neutral-400 mt-10 text-center">
-            New here?{" "}
-            <span className="text-purple-400 font-medium hover:underline cursor-pointer">
-              Create account
+          <p className="mt-12 text-sm font-bold uppercase text-center">
+            No account?{" "}
+            <span className="underline cursor-pointer">
+              Create One.
             </span>
           </p>
 
-        </div>
-      </motion.div>
-
-      {/* Tailwind Shimmer Keyframes */}
-      <style jsx>{`
-        @keyframes shimmer {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(100%); }
-        }
-      `}</style>
+        </form>
+      </div>
     </div>
   );
 }
