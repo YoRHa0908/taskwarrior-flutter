@@ -1,0 +1,127 @@
+name: Nightly F-Droid CI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy Nightly APK to F-Droid
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 0: Free up disk space
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: false # Keep Android SDKs for Flutter
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
+      # Step 1: Checkout the main branch (Shallow clone)
+      - name: Checkout Main Branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      # Step 2: Setup Java
+      - uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17.x"
+
+      # Step 3: Setup Flutter
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.29.2"
+
+      # Step 4: Get dependencies
+      - name: Get dependencies
+        run: flutter pub get
+
+      # Step 5: Decode signing secrets
+      - name: Decode Signing Secrets
+        env:
+          NIGHTLY_KEYSTORE_B64: ${{ secrets.NIGHTLY_KEYSTORE_B64 }}
+          NIGHTLY_PROPERTIES_B64: ${{ secrets.NIGHTLY_PROPERTIES_B64 }}
+        run: |
+          echo "$NIGHTLY_KEYSTORE_B64" | base64 --decode > android/nightly.jks
+          echo "$NIGHTLY_PROPERTIES_B64" | base64 --decode > android/key_nightly.properties
+
+      # Step 6: Build the APK
+      - name: Build APK
+        run: flutter build apk --flavor nightly --build-number=${{ github.run_number }} --release
+
+      # Step 7: Verify the APK is signed
+      - name: Verify sign
+        run: keytool -printcert -jarfile build/app/outputs/flutter-apk/app-nightly-release.apk
+
+      # Step 8: Configure git, fetch existing repo, and place new APK
+      # We fetch the repo so we can see existing APKs to prune them in the next step.
+      - name: Configure and Prepare Files
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Fetch the target branch to get existing APKs (if branch exists)
+          git fetch origin fdroid-repo:fdroid-repo || echo "Branch not found, proceeding..."
+          # stash changes if any
+          git stash || echo "No changes to stash"
+          # Switch to that branch or create if it doesn't exist (to setup folder structure)
+          git checkout fdroid-repo || git checkout --orphan fdroid-repo
+
+          # Move the newly built APK into the repo folder
+          # Ensure repo dir exists
+          mkdir -p repo
+          mv build/app/outputs/flutter-apk/app-nightly-release.apk repo/nightly.${{ github.run_number }}.apk
+
+      # Step 9: Prune Old APKs, keeping only the 5 most recent
+      - name: Prune Old APKs
+        run: |
+          echo "Checking for old APKs to prune..."
+          if [ $(ls -1 repo/*.apk 2>/dev/null | wc -l) -gt 5 ]; then
+            echo "More than 5 APKs found. Deleting all but the 5 most recent..."
+            ls -1 repo/*.apk | sort -V | head -n -5 | xargs rm -f
+          else
+            echo "5 or fewer APKs found. No cleanup needed."
+          fi
+
+      # Step 10: Setup F-Droid and update the repo metadata
+      - name: Run F-Droid Update
+        env:
+          FDROID_CONFIG_YML_B64: ${{ secrets.FDROID_CONFIG_YML }}
+          FDROID_KEYSTORE_P12_B64: ${{ secrets.FDROID_KEYSTORE_P12 }}
+        run: |
+          # Decode the secrets into files
+          echo $FDROID_CONFIG_YML_B64 | base64 --decode > config.yml
+          echo $FDROID_KEYSTORE_P12_B64 | base64 --decode > keystore.p12
+
+          # Install fdroidserver
+          sudo apt-get update
+          sudo apt-get install -y fdroidserver
+
+          # Run the update command
+          fdroid update -c
+
+      # Step 11: Push a fresh history with NO bloat
+      # This creates a temporary orphan branch (no parents) containing ONLY
+      # the files currently on disk, then force pushes it to replace fdroid-repo.
+      - name: Push F-Droid updates
+        run: |
+          # Create a temporary orphan branch (fresh start, no history)
+          git checkout --orphan temp_deploy_branch
+
+          # Add all files currently on disk (New APK + 4 Old APKs + New Index)
+          git add .
+
+          # Create a new 'Initial Commit'
+          git commit -m "chore: Update F-Droid repo (Build ${{ github.run_number }})"
+
+          # Force push this new state to overwrite fdroid-repo
+          git push origin temp_deploy_branch:fdroid-repo --force

@@ -1,0 +1,107 @@
+plugins {
+    id "com.android.application"
+    id "kotlin-android"
+    id "dev.flutter.flutter-gradle-plugin"
+}
+
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withReader('UTF-8') { reader ->
+        localProperties.load(reader)
+    }
+}
+
+def flutterVersionCode = localProperties.getProperty('flutter.versionCode')
+if (flutterVersionCode == null) {
+    flutterVersionCode = '1'
+}
+
+def flutterVersionName = localProperties.getProperty('flutter.versionName')
+if (flutterVersionName == null) {
+    flutterVersionName = '1.0'
+}
+
+def keystoreProperties = new Properties()
+   def keystorePropertiesFile = rootProject.file('key.properties')
+   if (keystorePropertiesFile.exists()) {
+       keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
+def nightlyKeystoreProperties = new Properties()
+def nightlyKeystorePropertiesFile = rootProject.file('key_nightly.properties')
+if (nightlyKeystorePropertiesFile.exists()) {
+    nightlyKeystoreProperties.load(new FileInputStream(nightlyKeystorePropertiesFile))
+}
+
+android {
+	namespace "com.ccextractor.taskwarriorflutter"
+    compileSdkVersion 36
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+        coreLibraryDesugaringEnabled true
+    }
+
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+
+    sourceSets {
+        main.java.srcDirs += 'src/main/kotlin'
+    }
+
+    signingConfigs {
+        production {
+            keyAlias keystoreProperties['keyAlias']
+            keyPassword keystoreProperties['keyPassword']
+            storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+            storePassword keystoreProperties['storePassword']
+        }
+        nightly {
+            keyAlias nightlyKeystoreProperties['keyAlias']
+            keyPassword nightlyKeystoreProperties['keyPassword']
+            storeFile nightlyKeystoreProperties['storeFile'] ? file(nightlyKeystoreProperties['storeFile']) : null
+            storePassword nightlyKeystoreProperties['storePassword']
+        }
+    }
+
+    defaultConfig {
+        minSdkVersion flutter.minSdkVersion
+        targetSdkVersion 33
+        versionCode flutterVersionCode.toInteger()
+        versionName flutterVersionName
+    }
+
+    flavorDimensions "default"
+    productFlavors {
+        production {
+            dimension "default"
+            applicationId "com.ccextractor.taskwarriorflutter"
+            signingConfig keystoreProperties.isEmpty() ? signingConfigs.debug : signingConfigs.production
+        }
+        nightly {
+            dimension "default"
+            applicationId "com.ccextractor.taskwarriorflutter.nightly"
+            versionNameSuffix "-nightly"
+            signingConfig nightlyKeystoreProperties.isEmpty() ? signingConfigs.debug : signingConfigs.nightly
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            shrinkResources false
+        }
+    }
+}
+
+flutter {
+    source '../..'
+}
+
+dependencies {
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
+}
+
